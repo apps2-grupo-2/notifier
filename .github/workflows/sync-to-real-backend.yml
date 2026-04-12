@@ -1,0 +1,46 @@
+name: Sync apps2 backend
+
+on:
+  push:
+    branches:
+      - development
+      - test
+      - production
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref_name }}
+
+    steps:
+      - name: Checkout source repository
+        uses: actions/checkout@v4
+
+      - name: Clone destination repository
+        run: |
+          git clone https://x-access-token:${{ secrets.DEST_REPO_TOKEN }}@${{ secrets.DEST_REPO_URL }} destination
+
+      - name: Sync files into target folder
+        run: |
+          mkdir -p destination/src/hobby/notifier
+
+          rsync -av --delete \
+            --exclude='.git' \
+            --exclude='.github' \
+            ./src/hobby/notifier/ destination/src/hobby/notifier/
+
+      - name: Commit and push changes
+        run: |
+          cd destination
+          git checkout ${{ github.ref_name }} || git checkout -b ${{ github.ref_name }} origin/${{ github.ref_name }}
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add .
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+
+          git commit -m "Sync from apps2-grupo-2/backend@${{ github.ref_name }}"
+          git push origin ${{ github.ref_name }}
