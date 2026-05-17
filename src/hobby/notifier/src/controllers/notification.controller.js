@@ -15,6 +15,17 @@ class NotificationController {
         }   
     }
 
+    async getNotification (req,res,next) {
+        try{
+            const query = req.query;
+            const notifications = await this.notificationService.getNotification(query);
+            res.status(200).json(notifications);
+        } catch (error) {
+            next (error);
+        }
+
+    }
+
 }
 
 module.exports = { NotificationController };
